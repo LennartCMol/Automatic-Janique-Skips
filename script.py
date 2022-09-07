@@ -1,4 +1,5 @@
 # client authentication
+from cgi import test
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 import spotipy.util as util
@@ -14,17 +15,36 @@ redirect_uri = "http://localhost:8888/callback"
 token = util.prompt_for_user_token(privateInfo.username, scope, privateInfo.CLIENT_ID, privateInfo.CLIENT_SECRET, redirect_uri)
 sp = spotipy.Spotify(auth=token)
 
+# search for specified song name
+def searchBySongName(songName):
+    if(getDeviceState()):
+        result = sp.search(q='track:' + songName, type='track', limit = 1)['tracks']['items'][0]
+        album_name = result['album']['name']
+        artist_names = ''
+        for artists in result['artists']:
+            artist_names = artist_names + artists['name'] + ', '
+        artist_names = artist_names[:-2]
+        song_name = result['name']
+        song_uri = result['uri'].split(":")[2]
+        return {
+            "album_name": album_name,
+            "artist_names": artist_names,
+            "song_name": song_name,
+            "song_uri": song_uri
+        }
 
-
-# uri IDs of songs that Janique likes (test songs for now)
-uri_list = [
-    "3vkQ5DAB1qQMYO4Mr9zJN6", # Gimme! Gimme! Gimme - ABBA
-    "0GjEhVFGZW8afUYGChu3Rr", # Dancing Queen - ABBA
-    "2245x0g1ft0HC7sf79zbYN", # Lay All Your Love On Me - ABBA
-    "4T6FWA703h6H7zk1FoSARw", # New Light - John Mayer
-    "3SktMqZmo3M9zbB7oKMIF7", # Gravity - John Mayer
-    "77Y57qRJBvkGCUw9qs0qMg"  # In the Blood - John Mayer
+# add to favourite songs list 
+favourite_song_name_list = [
+    "Gimme! Gimme! Gimme!",
+    "Dancing Queen",
+    "Lay All Your Love On Me",
+    "New Light",
+    "Gravity",
+    "In the Blood"
 ]
+
+# will fill up with songs
+song_info_list = {}
 
 # constants
 DELAY = 0.5 # delay in seconds for loop 
@@ -36,9 +56,10 @@ MAXIMUM_TIME = 5 # maximum time
 from random import randint
 from time import sleep
 
+
 # create loop that updates every second
 def loop(previous_track_uri):
-    
+
     while True:
         # update loop every half a second
         sleep(DELAY)
@@ -46,7 +67,7 @@ def loop(previous_track_uri):
         if getDeviceState():
             # only check track if player is not paused
             if not getPlayingState():
-                print("Track paused.")
+                print("Track paused.\n")
                 
             else:
                 current_track_uri = getTrackUri()
@@ -74,10 +95,6 @@ def loop(previous_track_uri):
                 # update current track
                 previous_track_uri = current_track_uri    
         
-            
-
-        
-
 
 
 # custom functions 
@@ -103,9 +120,13 @@ def getTrackUri():
 # check if uri matches an uri in the list 
 def checkIfFavourite(track_uri):
     if(getDeviceState()):
-        if track_uri in uri_list:
+        boolVar = False
+        for item in song_info_list:
+            if song_info_list[item]['song_uri'] == track_uri:
+                boolVar = True
+        if boolVar:
             return True
-        else:
+        else: 
             return False
 
 # get playing state
@@ -131,5 +152,17 @@ def getDeviceState():
     except:
         # catch exception
         print('\n')
+
+
+# fill up song_info_list
+print("\nSearching for specified songs... ")
+songItem = 0
+for song in favourite_song_name_list:
+    songItem = songItem + 1
+    print("\n\tSearching for: '" + song + "'...")
+    result = searchBySongName(song)
+    song_info_list[songItem] = result
+    print("\tFound: '" + song_info_list[songItem]['song_name'] + "' by '" + song_info_list[songItem]['artist_names'] + "' from album '" + song_info_list[songItem]['album_name'] + "' with uri '" + song_info_list[songItem]['song_uri'] + "'")
+print("\nAll songs loaded. Scanning Spotify account...\n")
 
 loop("no track yet")

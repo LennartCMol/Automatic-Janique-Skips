@@ -109,3 +109,7 @@ dist
 web-api-auth-examples
 
 .DS_Store
+
+__pycache__/privateInfo.cpython-310.pyc
+
+.cache-ksnv5xr750w34vr8lfkphmciq

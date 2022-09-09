@@ -22,14 +22,14 @@ MAXIMUM_TIME = 5 # maximum time
 PLAYLIST = "janiquevaniersel + Lennart"
 
 # add to favourite songs list 
-favourite_song_name_list = [
-    "Gimme! Gimme! Gimme!",
-    "Dancing Queen",
-    "Lay All Your Love On Me",
-    "New Light",
-    "Gravity",
-    "In the Blood"
-]
+favourite_song_name_list = {
+    0: "Gimme! Gimme! Gimme!",
+    1: "Dancing Queen",
+    2: "Lay All Your Love On Me",
+    3: "New Light",
+    4: "Gravity",
+    5: "In the Blood"
+}
 
 # will fill up with favourite songs
 favourite_song_info_list = {}
@@ -40,13 +40,18 @@ from time import sleep
 
 # create loop that updates every second
 def loop(previous_track_uri):
-
+    
     # get favourite songs 
+    print("\nSearching for specified songs... ")
+    # from songslist
     fillUpCustomSongList(favourite_song_name_list)
+    print("\n\n")
 
+    # from playlist
     playlistId = getPlaylistIdByPlaylistname(PLAYLIST, 0)
-    dict = getSongsFromPlaylist(playlistId, privateInfo.userid)
-    fillUpCustomSongList(dict, True)
+    songsList = getSongsFromPlaylist(playlistId, privateInfo.userid)
+    fillUpCustomSongList(songsList, True)
+    print("\nAll songs loaded. Scanning Spotify account...\n")
 
     while True:
         # update loop every half a second
@@ -148,16 +153,14 @@ def getDeviceState():
 
 # fill up song_info_list
 def fillUpCustomSongList(list, trackKnown=False): 
-    print("\nSearching for specified songs... ")
-    for song in list:
+    for key, song in list.items():
         if trackKnown:
             result = song
         else:
             result = getSongInfoBySongname(song)
         songIndex = len(favourite_song_info_list)
         favourite_song_info_list[songIndex] = result
-        print("\tFound: '" + favourite_song_info_list[songIndex]['song_name'] + "' by '" + favourite_song_info_list[songIndex]['artist_names'] + "' from album '" + favourite_song_info_list[songIndex]['album_name'] + "' with uri '" + favourite_song_info_list[songIndex]['song_uri'] + "'")
-    print("\nAll songs loaded. Scanning Spotify account...\n")
+        printFoundSong(result)
 
 # search for specified playlist within user's playlists
 def getPlaylistIdByPlaylistname(playlistName, offsetIndex):
@@ -214,15 +217,20 @@ def getSongsFromPlaylist(playlistId, userid=None):
                 songinfo = getSongInfoBySongname(song['track'], True)
                 songsDict[len(songsDict)] = songinfo
                 listElements = listElements + 1
+                printFoundSong(songinfo)
         else:
             songinfo = getSongInfoBySongname(song['track'], True)
             songsDict[len(songsDict)] = songinfo
             listElements = listElements + 1
+            printFoundSong(songinfo)
     songsList = []
-    for item in songsDict.items():
-        songsList.append(item[1])
+    index = 0
+    for key, value in songsDict.items():
+        songsList.append(value)
     return songsDict
         
+def printFoundSong(songInfo):
+    print("\n\tFound: '" + songInfo['song_name'] + "' by '" + songInfo['artist_names'] + "' from album '" + songInfo['album_name'] + "' with uri '" + songInfo['song_uri'] + "'")
 
 
 loop("no track yet")

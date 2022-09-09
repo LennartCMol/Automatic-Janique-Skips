@@ -79,7 +79,7 @@ def loop(previous_track_uri):
                             
                         # random delay between skips to mimic Janique listening to track before skipping
                         random_delay = randint(MINIMUM_TIME,MAXIMUM_TIME)
-                        print("Waiting " + str(random_delay) + " seconds to skip the track.\n")
+                        print("Waiting " + str(random_delay) + " seconds to skip the track to imitate Janique.\n")
                         sleep(random_delay)
                         try:
                             sp.next_track()

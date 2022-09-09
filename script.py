@@ -8,12 +8,36 @@ import spotipy.util as util
 import privateInfo
 
 # set up authentication for Spotify device and define scopes
-scope = "user-read-currently-playing user-modify-playback-state user-read-playback-state"
+scope = "user-read-currently-playing user-modify-playback-state user-read-playback-state playlist-read-private playlist-read-collaborative"
 redirect_uri = "http://localhost:8888/callback"
 
 # authentication token and create client with said token
 token = util.prompt_for_user_token(privateInfo.userid, scope, privateInfo.CLIENT_ID, privateInfo.CLIENT_SECRET, redirect_uri)
 sp = spotipy.Spotify(auth=token)
+
+# constants
+DELAY = 0.5 # delay in seconds for loop 
+MINIMUM_TIME = 2 # minimum time between track skips
+MAXIMUM_TIME = 5 # maximum time
+#PLAYLIST = "janiquevaniersel + Lennart"
+PLAYLIST = "Eminem"
+
+# search for specified playlist within user's playlists
+def getPlaylistIdByPlaylistname(playlistName, offsetIndex):
+    playlists = sp.current_user_playlists(offset=offsetIndex)
+    available_playlists = len(playlists['items'])
+    playlistId = ""
+    for playlist in playlists['items']:
+        if playlist['name'] == playlistName:
+            playlistId = playlist['id']
+    if playlistId == "" and available_playlists == 0:
+        print("Specified playlist does not exist.\n")
+        return
+    elif playlistId == "":
+        offsetIndex = offsetIndex + available_playlists
+        playlistId = getPlaylistIdByPlaylistname(playlistName, offsetIndex)
+    else:
+        return playlistId
 
 # search for specified song name
 def getSongInfoBySongname(songName):
@@ -45,12 +69,6 @@ favourite_song_name_list = [
 
 # will fill up with songs
 favourite_song_info_list = {}
-
-# constants
-DELAY = 0.5 # delay in seconds for loop 
-MINIMUM_TIME = 2 # minimum time between track skips
-MAXIMUM_TIME = 5 # maximum time
-
 
 # loop that checks track on timer call
 from random import randint
@@ -174,5 +192,6 @@ def fillUpSongCustomSongList():
     print("\nAll songs loaded. Scanning Spotify account...\n")
 
 
-
+test = getPlaylistIdByPlaylistname(PLAYLIST, 0)
+test = 1
 loop("no track yet")

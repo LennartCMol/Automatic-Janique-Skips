@@ -19,43 +19,7 @@ sp = spotipy.Spotify(auth=token)
 DELAY = 0.5 # delay in seconds for loop 
 MINIMUM_TIME = 2 # minimum time between track skips
 MAXIMUM_TIME = 5 # maximum time
-#PLAYLIST = "janiquevaniersel + Lennart"
-PLAYLIST = "Eminem"
-
-# search for specified playlist within user's playlists
-def getPlaylistIdByPlaylistname(playlistName, offsetIndex):
-    playlists = sp.current_user_playlists(offset=offsetIndex)
-    available_playlists = len(playlists['items'])
-    playlistId = ""
-    for playlist in playlists['items']:
-        if playlist['name'] == playlistName:
-            playlistId = playlist['id']
-    if playlistId == "" and available_playlists == 0:
-        print("Specified playlist does not exist.\n")
-        return
-    elif playlistId == "":
-        offsetIndex = offsetIndex + available_playlists
-        playlistId = getPlaylistIdByPlaylistname(playlistName, offsetIndex)
-    else:
-        return playlistId
-
-# search for specified song name
-def getSongInfoBySongname(songName):
-    if(getDeviceState()):
-        result = sp.search(q='track:' + songName, type='track', limit = 1)['tracks']['items'][0]
-        album_name = result['album']['name']
-        artist_names = ''
-        for artists in result['artists']:
-            artist_names = artist_names + artists['name'] + ', '
-        artist_names = artist_names[:-2]
-        song_name = result['name']
-        song_uri = result['uri'].split(":")[2]
-        return {
-            "album_name": album_name,
-            "artist_names": artist_names,
-            "song_name": song_name,
-            "song_uri": song_uri
-        }
+PLAYLIST = "janiquevaniersel + Lennart"
 
 # add to favourite songs list 
 favourite_song_name_list = [
@@ -67,13 +31,12 @@ favourite_song_name_list = [
     "In the Blood"
 ]
 
-# will fill up with songs
+# will fill up with favourite songs
 favourite_song_info_list = {}
 
 # loop that checks track on timer call
 from random import randint
 from time import sleep
-
 
 # create loop that updates every second
 def loop(previous_track_uri):
@@ -191,7 +154,54 @@ def fillUpSongCustomSongList():
         print("\tFound: '" + favourite_song_info_list[songItem]['song_name'] + "' by '" + favourite_song_info_list[songItem]['artist_names'] + "' from album '" + favourite_song_info_list[songItem]['album_name'] + "' with uri '" + favourite_song_info_list[songItem]['song_uri'] + "'")
     print("\nAll songs loaded. Scanning Spotify account...\n")
 
+# search for specified playlist within user's playlists
+def getPlaylistIdByPlaylistname(playlistName, offsetIndex):
+    playlists = sp.current_user_playlists(offset=offsetIndex)
+    available_playlists = len(playlists['items'])
+    playlistId = ""
+    for playlist in playlists['items']:
+        if playlist['name'] == playlistName:
+            playlistId = playlist['id']
+    if playlistId == "" and available_playlists == 0:
+        print("\nSpecified playlist does not exist.\n")
+        return
+    elif playlistId == "":
+        offsetIndex = offsetIndex + available_playlists
+        playlistId = getPlaylistIdByPlaylistname(playlistName, offsetIndex)
+    else:
+        return playlistId
 
-test = getPlaylistIdByPlaylistname(PLAYLIST, 0)
-test = 1
+# search for specified song name
+def getSongInfoBySongname(songName):
+    if(getDeviceState()):
+        result = sp.search(q='track:' + songName, type='track', limit = 1)['tracks']['items'][0]
+        album_name = result['album']['name']
+        artist_names = ''
+        for artists in result['artists']:
+            artist_names = artist_names + artists['name'] + ', '
+        artist_names = artist_names[:-2]
+        song_name = result['name']
+        song_uri = result['uri'].split(":")[2]
+        return {
+            "album_name": album_name,
+            "artist_names": artist_names,
+            "song_name": song_name,
+            "song_uri": song_uri
+        }
+
+# get songs from playlist and put them in favourite songs.
+# can be overloaded with userid
+def getSongsFromPlaylist(playlistId, userid=None):
+    songs = sp.playlist(playlistId)['tracks']['items']
+    for song in songs:
+        if userid is not None:
+            added_by = song['added_by']['id']
+            if not added_by == userid:
+                songnotbyuserid = song
+        else:
+            songbyeveryid = song
+        
+
+playlistId = getPlaylistIdByPlaylistname(PLAYLIST, 0)
+getSongsFromPlaylist(playlistId, privateInfo.userid)
 loop("no track yet")

@@ -42,7 +42,11 @@ from time import sleep
 def loop(previous_track_uri):
 
     # get favourite songs 
-    fillUpCustomSongList()
+    fillUpCustomSongList(favourite_song_name_list)
+
+    playlistId = getPlaylistIdByPlaylistname(PLAYLIST, 0)
+    dict = getSongsFromPlaylist(playlistId, privateInfo.userid)
+    fillUpCustomSongList(dict, True)
 
     while True:
         # update loop every half a second
@@ -143,11 +147,13 @@ def getDeviceState():
         print('\n')
 
 # fill up song_info_list
-def fillUpCustomSongList(): 
+def fillUpCustomSongList(list, trackKnown=False): 
     print("\nSearching for specified songs... ")
-    for song in favourite_song_name_list:
-        print("\n\tSearching for: '" + song + "'...")
-        result = getSongInfoBySongname(song)
+    for song in list:
+        if trackKnown:
+            result = song
+        else:
+            result = getSongInfoBySongname(song)
         songIndex = len(favourite_song_info_list)
         favourite_song_info_list[songIndex] = result
         print("\tFound: '" + favourite_song_info_list[songIndex]['song_name'] + "' by '" + favourite_song_info_list[songIndex]['artist_names'] + "' from album '" + favourite_song_info_list[songIndex]['album_name'] + "' with uri '" + favourite_song_info_list[songIndex]['song_uri'] + "'")
@@ -176,6 +182,7 @@ def getSongInfoBySongname(songName, trackKnown=False):
     if(getDeviceState()):
         if not trackKnown:
             # will search track with api search function
+            print("\n\tSearching for: '" + songName + "'...")
             result = sp.search(q='track:' + songName, type='track', limit = 1)['tracks']['items'][0]
         else:
             # track is already known
@@ -198,16 +205,24 @@ def getSongInfoBySongname(songName, trackKnown=False):
 # can be overloaded with userid
 def getSongsFromPlaylist(playlistId, userid=None):
     songs = sp.playlist(playlistId)['tracks']['items']
+    songsDict = {}
+    listElements = 0
     for song in songs:
         if userid is not None:
             added_by = song['added_by']['id']
             if not added_by == userid:
-                info = getSongInfoBySongname(song['track'], True)
-                songnotbyuserid = song
+                songinfo = getSongInfoBySongname(song['track'], True)
+                songsDict[len(songsDict)] = songinfo
+                listElements = listElements + 1
         else:
-            songbyeveryid = song
+            songinfo = getSongInfoBySongname(song['track'], True)
+            songsDict[len(songsDict)] = songinfo
+            listElements = listElements + 1
+    songsList = []
+    for item in songsDict.items():
+        songsList.append(item[1])
+    return songsDict
         
 
-playlistId = getPlaylistIdByPlaylistname(PLAYLIST, 0)
-getSongsFromPlaylist(playlistId, privateInfo.userid)
+
 loop("no track yet")

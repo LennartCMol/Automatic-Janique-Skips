@@ -12,11 +12,11 @@ scope = "user-read-currently-playing user-modify-playback-state user-read-playba
 redirect_uri = "http://localhost:8888/callback"
 
 # authentication token and create client with said token
-token = util.prompt_for_user_token(privateInfo.username, scope, privateInfo.CLIENT_ID, privateInfo.CLIENT_SECRET, redirect_uri)
+token = util.prompt_for_user_token(privateInfo.userid, scope, privateInfo.CLIENT_ID, privateInfo.CLIENT_SECRET, redirect_uri)
 sp = spotipy.Spotify(auth=token)
 
 # search for specified song name
-def searchBySongName(songName):
+def getSongInfoBySongname(songName):
     if(getDeviceState()):
         result = sp.search(q='track:' + songName, type='track', limit = 1)['tracks']['items'][0]
         album_name = result['album']['name']
@@ -44,7 +44,7 @@ favourite_song_name_list = [
 ]
 
 # will fill up with songs
-song_info_list = {}
+favourite_song_info_list = {}
 
 # constants
 DELAY = 0.5 # delay in seconds for loop 
@@ -60,10 +60,18 @@ from time import sleep
 # create loop that updates every second
 def loop(previous_track_uri):
 
+    # get favourite songs 
+    fillUpSongCustomSongList()
+
     while True:
         # update loop every half a second
         sleep(DELAY)
 
+        # check if there are any favourite songs
+        if not favourite_song_info_list:
+            print("\nThere are no favourite songs at the moment.\n")
+            return
+        
         if getDeviceState():
             # only check track if player is not paused
             if not getPlayingState():
@@ -121,8 +129,8 @@ def getTrackUri():
 def checkIfFavourite(track_uri):
     if(getDeviceState()):
         boolVar = False
-        for item in song_info_list:
-            if song_info_list[item]['song_uri'] == track_uri:
+        for item in favourite_song_info_list:
+            if favourite_song_info_list[item]['song_uri'] == track_uri:
                 boolVar = True
         if boolVar:
             return True
@@ -153,16 +161,18 @@ def getDeviceState():
         # catch exception
         print('\n')
 
-
 # fill up song_info_list
-print("\nSearching for specified songs... ")
-songItem = 0
-for song in favourite_song_name_list:
-    songItem = songItem + 1
-    print("\n\tSearching for: '" + song + "'...")
-    result = searchBySongName(song)
-    song_info_list[songItem] = result
-    print("\tFound: '" + song_info_list[songItem]['song_name'] + "' by '" + song_info_list[songItem]['artist_names'] + "' from album '" + song_info_list[songItem]['album_name'] + "' with uri '" + song_info_list[songItem]['song_uri'] + "'")
-print("\nAll songs loaded. Scanning Spotify account...\n")
+def fillUpSongCustomSongList(): 
+    print("\nSearching for specified songs... ")
+    songItem = 0
+    for song in favourite_song_name_list:
+        songItem = songItem + 1
+        print("\n\tSearching for: '" + song + "'...")
+        result = getSongInfoBySongname(song)
+        favourite_song_info_list[songItem] = result
+        print("\tFound: '" + favourite_song_info_list[songItem]['song_name'] + "' by '" + favourite_song_info_list[songItem]['artist_names'] + "' from album '" + favourite_song_info_list[songItem]['album_name'] + "' with uri '" + favourite_song_info_list[songItem]['song_uri'] + "'")
+    print("\nAll songs loaded. Scanning Spotify account...\n")
+
+
 
 loop("no track yet")

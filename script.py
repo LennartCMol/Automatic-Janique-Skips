@@ -185,17 +185,24 @@ def getSongInfoBySongname(songName, trackKnown=False):
     if not trackKnown:
         # will search track with api search function
         print("\n\tSearching for: '" + songName + "'...")
-        result = sp.search(q='track:' + songName, type='track', limit = 1)['tracks']['items'][0]
+        song = sp.search(q='track:' + songName, type='track', limit = 1)['tracks']['items'][0]
     else:
-        # track is already known
-        result = songName
-    album_name = result['album']['name']
+        # track is already known and has all information
+        song = songName
+
+    songInfo = getSongInfo(song)
+    return songInfo
+    
+
+# returns dictionary with song info
+def getSongInfo(song):
+    album_name = song['album']['name']
     artist_names = ''
-    for artists in result['artists']:
+    for artists in song['artists']:
         artist_names = artist_names + artists['name'] + ', '
     artist_names = artist_names[:-2]
-    song_name = result['name']
-    song_uri = result['uri'].split(":")[2]
+    song_name = song['name']
+    song_uri = song['uri'].split(":")[2]
     return {
         "album_name": album_name,
         "artist_names": artist_names,

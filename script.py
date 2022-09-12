@@ -7,11 +7,13 @@ import spotipy.util as util
 # private variable reading. user must create this file with spotify username and spotify developer client information.
 import privateInfo
 
-# set up authentication for Spotify device and define scopes
+# random for delay and sleep
+from random import randint
+from time import sleep
+
+# define scopes and authenticate client
 scope = "user-read-currently-playing user-modify-playback-state user-read-playback-state playlist-read-private playlist-read-collaborative"
 redirect_uri = "http://localhost:8888/callback"
-
-# authentication token and create client with said token
 token = util.prompt_for_user_token(privateInfo.userid, scope, privateInfo.CLIENT_ID, privateInfo.CLIENT_SECRET, redirect_uri)
 sp = spotipy.Spotify(auth=token)
 
@@ -22,8 +24,8 @@ MAXIMUM_TIME = 5 # maximum time
 PLAYLIST = "janiquevaniersel + Lennart" # get favourite tracks from Janique from blend list between Janique and Lennart 
 ADDED_BY_USERID = "janiquevaniersel" # userid to check 'added by' playlist tracks
 
-# add to favourite tracks list 
-favourite_track_name_list = {
+# cumstom track names that will be searched and put in favourites
+track_names_to_be_searched = {
     0: "Gimme! Gimme! Gimme!",
     1: "Dancing Queen",
     2: "Lay All Your Love On Me",
@@ -34,19 +36,15 @@ favourite_track_name_list = {
     7: "fdashgarhfkjdhskjfhks" # test track
 }
 
-# will fill up with favourite tracks
+# dictionary that will fill up with favourite tracks
 favourite_track_info_list = {}
 
-# loop that checks track on timer call
-from random import randint
-from time import sleep
-
-# create loop that updates every second
+# create loop 
 def loop(previous_track_uri):
     
     # get favourite tracks from custom list
     print("\nSearching for specified tracks... ")
-    fillUpCustomTrackList(favourite_track_name_list)
+    fillUpCustomTrackList(track_names_to_be_searched)
     print("\n\n")
 
     # get tracks from playlist
@@ -127,8 +125,7 @@ def getCurrentTrackInfo():
             return getTrackInfo(current_track['item'])
         except:
             # catch exception
-            print('\n')
-        
+            print('\n')     
 
 def checkIfFavourite(track_uri):
     """ Check if track is in favourites list
@@ -229,7 +226,6 @@ def getPlaylistIdByPlaylistname(playlistName, offsetIndex=0):
     else:
         return playlistId
 
-
 def searchTrack(trackName):
     """ Search track by name with Spotify's search algoritmh. 
         Returns dictionary with search state and search result.
@@ -251,8 +247,6 @@ def searchTrack(trackName):
             "searchState": False,
             "trackResult": None 
             }
-    
-    
 
 def getAllTracksFromPlaylistAddedByUserId(playlistId, userid):
     """ Get all tracks from a playlist added by a certain userid
@@ -273,6 +267,8 @@ def getAllTracksFromPlaylistAddedByUserId(playlistId, userid):
     return tracksDict
         
 def printFoundTrack(trackInfo):
+    """ Print track info: track name, artist(s), album and uri.
+    """
     print("\n\tFound: '" + trackInfo['track_name'] + "' by '" + trackInfo['artist_names'] + "' from album '" + trackInfo['album_name'] + "' with uri '" + trackInfo['track_uri'] + "'")
 
 

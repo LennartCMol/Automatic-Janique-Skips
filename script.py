@@ -69,11 +69,12 @@ def loop(previous_track_uri):
                 print("Track paused.\n")
                 
             else:
-                current_track_uri = getTrackUri()
+                current_track_info = getCurrentTrackInfo()
+                current_track_uri = current_track_info['song_uri']
                     
                 # check if another track is playing or if track is not favourite
                 if (current_track_uri != previous_track_uri or not checkIfFavourite(current_track_uri)):    
-                    print(getTrackInfo())    
+                    print("Track: " + current_track_info['song_name'] + " - " + current_track_info['artist_names'])
 
                     # skip if track is not a favourite track
                     if not checkIfFavourite(current_track_uri):
@@ -98,22 +99,13 @@ def loop(previous_track_uri):
 # custom functions 
 
 # get track artist and name
-def getTrackInfo():
-    if(getDeviceState()):
-        track_info = sp.current_user_playing_track()
-        track_name = track_info['item']['name']
-        artist_names = ''
-        for artists in track_info['item']['artists']:
-            artist_names = artist_names + artists['name'] + ', '
-        artist_names = artist_names[:-2]
-        return "Track: " + track_name + " by " + artist_names + "."
+def getCurrentTrackInfo():
+    """ Returns getSongInfo dictionary from current song.
+    """
 
-# get track uri
-def getTrackUri():
     if(getDeviceState()):
-        track_info = sp.current_user_playing_track()
-        track = track_info['item']['uri']
-        return track.split(":")[2]
+        current_track = sp.current_user_playing_track()
+        return getSongInfo(current_track['item'])
 
 # check if uri matches an uri in the list 
 def checkIfFavourite(track_uri):

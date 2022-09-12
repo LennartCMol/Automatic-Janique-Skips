@@ -19,21 +19,23 @@ sp = spotipy.Spotify(auth=token)
 DELAY = 0.5 # delay in seconds for loop 
 MINIMUM_TIME = 2 # minimum time between track skips
 MAXIMUM_TIME = 5 # maximum time
-PLAYLIST = "janiquevaniersel + Lennart" # get favourite songs from Janique from blend list between Janique and Lennart 
+PLAYLIST = "janiquevaniersel + Lennart" # get favourite tracks from Janique from blend list between Janique and Lennart 
+ADDED_BY_USERID = "janiquevaniersel" # userid to check 'added by' playlist tracks
 
-# add to favourite songs list 
-favourite_song_name_list = {
+# add to favourite tracks list 
+favourite_track_name_list = {
     0: "Gimme! Gimme! Gimme!",
     1: "Dancing Queen",
     2: "Lay All Your Love On Me",
     3: "New Light",
     4: "Gravity",
     5: "In the Blood",
-    6: "9 to 5 "
+    6: "9 to 5 ",
+    7: "fdashgarhfkjdhskjfhks" # test track
 }
 
-# will fill up with favourite songs
-favourite_song_info_list = {}
+# will fill up with favourite tracks
+favourite_track_info_list = {}
 
 # loop that checks track on timer call
 from random import randint
@@ -42,25 +44,25 @@ from time import sleep
 # create loop that updates every second
 def loop(previous_track_uri):
     
-    # get favourite songs 
-    print("\nSearching for specified songs... ")
-    # from songslist
-    fillUpCustomSongList(favourite_song_name_list)
+    # get favourite tracks from custom list
+    print("\nSearching for specified tracks... ")
+    fillUpCustomTrackList(favourite_track_name_list)
     print("\n\n")
 
-    # from playlist
+    # get tracks from playlist
     playlistId = getPlaylistIdByPlaylistname(PLAYLIST, 0)
-    songsList = getSongsFromPlaylist(playlistId, privateInfo.userid)
-    fillUpCustomSongList(songsList, True)
-    print("\nAll songs loaded. Scanning Spotify account...\n")
+    tracksList = getAllTracksFromPlaylistAddedByUserId(playlistId, ADDED_BY_USERID)
+    fillUpCustomTrackList(tracksList, False)
+
+    print("\nAll tracks loaded. Scanning Spotify account...\n")
 
     while True:
-        # update loop every half a second
+        # loop delay
         sleep(DELAY)
 
-        # check if there are any favourite songs
-        if not favourite_song_info_list:
-            print("\nThere are no favourite songs at the moment.\n")
+        # check if there are any favourite tracks
+        if not favourite_track_info_list:
+            print("\nThere are no favourite tracks at the moment.\n")
             return
         
         if getDeviceState():
@@ -70,11 +72,11 @@ def loop(previous_track_uri):
                 
             else:
                 current_track_info = getCurrentTrackInfo()
-                current_track_uri = current_track_info['song_uri']
+                current_track_uri = current_track_info['track_uri']
                     
                 # check if another track is playing or if track is not favourite
                 if (current_track_uri != previous_track_uri or not checkIfFavourite(current_track_uri)):    
-                    print("Track: " + current_track_info['song_name'] + " - " + current_track_info['artist_names'])
+                    print("Track: " + current_track_info['track_name'] + " - " + current_track_info['artist_names'])
 
                     # skip if track is not a favourite track
                     if not checkIfFavourite(current_track_uri):
@@ -83,52 +85,82 @@ def loop(previous_track_uri):
                         random_delay = randint(MINIMUM_TIME,MAXIMUM_TIME)
                         print("Waiting " + str(random_delay) + " seconds to skip the track to imitate Janique.\n")
                         sleep(random_delay)
-                        try:
-                            sp.next_track()
-                        except:
-                            # catch exception
-                            print('\n')
+                        skipCurrentTrack()
+                        
                     else:
                         print("Found a track that Janique likes.\n")
                             
                 # update current track
                 previous_track_uri = current_track_uri    
-        
-
 
 # custom functions 
 
-# get track artist and name
+def getTrackInfo(track):
+    """ Returns dictionary with track info.
+
+    Parameters:
+        - track object
+
+    """
+
+    album_name = track['album']['name']
+    artist_names = ''
+    for artists in track['artists']:
+        artist_names = artist_names + artists['name'] + ', '
+    artist_names = artist_names[:-2]
+    track_name = track['name']
+    track_uri = track['uri'].split(":")[2]
+    return {
+        "album_name": album_name,
+        "artist_names": artist_names,
+        "track_name": track_name,
+        "track_uri": track_uri
+    }
+
 def getCurrentTrackInfo():
-    """ Returns getSongInfo dictionary from current song.
+    """ Returns getTrackInfo dictionary from current track.
     """
 
     if(getDeviceState()):
-        current_track = sp.current_user_playing_track()
-        return getSongInfo(current_track['item'])
+        try:
+            current_track = sp.current_user_playing_track()
+            return getTrackInfo(current_track['item'])
+        except:
+            # catch exception
+            print('\n')
+        
 
-# check if uri matches an uri in the list 
 def checkIfFavourite(track_uri):
-    if(getDeviceState()):
-        boolVar = False
-        for item in favourite_song_info_list:
-            if favourite_song_info_list[item]['song_uri'] == track_uri:
-                boolVar = True
-        if boolVar:
-            return True
-        else: 
-            return False
+    """ Check if track is in favourites list
 
-# get playing state
+        Parameters:
+            - track_uri
+    
+    """
+        
+    for item in favourite_track_info_list:
+        if favourite_track_info_list[item]['track_uri'] == track_uri:
+            return True
+    return False
+
 def getPlayingState():
+    """ Return current state of playback
+    """
+    
     if(getDeviceState()):
-        if sp.current_playback()['is_playing'] :
-            return True
-        else:
-            return False
+        try:
+            if sp.current_playback()['is_playing'] :
+                return True
+            else:
+                return False
+        except:
+            # catch exception
+            print('\n')
 
-#get device state
 def getDeviceState():
+    """ Check if any device is currently connected to Spotify
+    """
+
     try:
         if sp.devices()['devices']:
             if sp.devices()['devices'][0]['is_active']:
@@ -143,19 +175,45 @@ def getDeviceState():
         # catch exception
         print('\n')
 
-# fill up song_info_list
-def fillUpCustomSongList(list, trackKnown=False): 
-    for key, song in list.items():
-        if trackKnown:
-            result = song
-        else:
-            result = getSongInfoBySongname(song)
-        songIndex = len(favourite_song_info_list)
-        favourite_song_info_list[songIndex] = result
-        printFoundSong(result)
+def skipCurrentTrack():
+    """ Skip currently playing track
+    """
 
-# search for specified playlist within user's playlists
-def getPlaylistIdByPlaylistname(playlistName, offsetIndex):
+    if(getDeviceState()):
+        try:
+            sp.next_track()
+        except:
+            # catch exception
+            print('\n')
+
+def fillUpCustomTrackList(list, trackNames=True): 
+    """ Update custom track list with list of tracknames provided. Can be overloaded to take tracklist with songs.
+
+        Parameters:
+            - List of tracknames OR list with tracks
+            - True if tracknames, false if tracks
+    """
+
+    for key, track in list.items():
+        if trackNames:
+            result = searchTrack(track)
+            if(result['searchState']):
+                result = getTrackInfo(result['trackResult'])
+                favourite_track_info_list[len(favourite_track_info_list)] = result
+                printFoundTrack(result)
+        else:
+            result = track
+            favourite_track_info_list[len(favourite_track_info_list)] = result
+            printFoundTrack(result)
+
+def getPlaylistIdByPlaylistname(playlistName, offsetIndex=0):
+    """ Search provided playlist in user's playlists
+
+        Parameters:
+            - Name of the playlist
+            - Offset for recursive use. Default = 0.
+    """
+    
     playlists = sp.current_user_playlists(offset=offsetIndex)
     available_playlists = len(playlists['items'])
     playlistId = ""
@@ -171,57 +229,51 @@ def getPlaylistIdByPlaylistname(playlistName, offsetIndex):
     else:
         return playlistId
 
-# return songinfo 
-# can be overloaded with trackKnown. if not provided will search by songname
-def getSongInfoBySongname(songName, trackKnown=False):
-    if not trackKnown:
-        # will search track with api search function
-        print("\n\tSearching for: '" + songName + "'...")
-        song = sp.search(q='track:' + songName, type='track', limit = 1)['tracks']['items'][0]
-    else:
-        # track is already known and has all information
-        song = songName
 
-    songInfo = getSongInfo(song)
-    return songInfo
+def searchTrack(trackName):
+    """ Search track by name with Spotify's search algoritmh. 
+        Returns dictionary with search state and search result.
+
+        Parameters:
+            - Track name in text
+    """
+
+    print("\n\tSearching for: '" + trackName + "'...")
+    try:
+        track = sp.search(q='track:' + trackName, type='track', limit = 1)['tracks']['items'][0]
+        return {
+            "searchState": True,
+            "trackResult": track 
+            }
+    except:
+        print("\n\tTrack not found: '" + trackName + "'")
+        return {
+            "searchState": False,
+            "trackResult": None 
+            }
+    
     
 
-# returns dictionary with song info
-def getSongInfo(song):
-    album_name = song['album']['name']
-    artist_names = ''
-    for artists in song['artists']:
-        artist_names = artist_names + artists['name'] + ', '
-    artist_names = artist_names[:-2]
-    song_name = song['name']
-    song_uri = song['uri'].split(":")[2]
-    return {
-        "album_name": album_name,
-        "artist_names": artist_names,
-        "song_name": song_name,
-        "song_uri": song_uri
-    }
+def getAllTracksFromPlaylistAddedByUserId(playlistId, userid):
+    """ Get all tracks from a playlist added by a certain userid
 
-# get songs from playlist and put them in favourite songs.
-# can be overloaded with userid
-def getSongsFromPlaylist(playlistId, userid=None):
-    songs = sp.playlist(playlistId)['tracks']['items']
-    songsDict = {}
-    for song in songs:
-        if userid is not None:
-            added_by = song['added_by']['id']
-            if not added_by == userid:
-                songinfo = getSongInfoBySongname(song['track'], True)
-                songsDict[len(songsDict)] = songinfo
-                printFoundSong(songinfo)
-        else:
-            songinfo = getSongInfoBySongname(song['track'], True)
-            songsDict[len(songsDict)] = songinfo
-            printFoundSong(songinfo)
-    return songsDict
+        Parameters:
+            - Provide playlist id
+            - Provide userid to select tracks from
+    """
+    
+    tracks = sp.playlist(playlistId)['tracks']['items']
+    tracksDict = {}
+    for track in tracks:
+        added_by = track['added_by']['id']
+        if added_by == userid:
+            trackinfo = getTrackInfo(track['track'])
+            tracksDict[len(tracksDict)] = trackinfo
+            printFoundTrack(trackinfo)
+    return tracksDict
         
-def printFoundSong(songInfo):
-    print("\n\tFound: '" + songInfo['song_name'] + "' by '" + songInfo['artist_names'] + "' from album '" + songInfo['album_name'] + "' with uri '" + songInfo['song_uri'] + "'")
+def printFoundTrack(trackInfo):
+    print("\n\tFound: '" + trackInfo['track_name'] + "' by '" + trackInfo['artist_names'] + "' from album '" + trackInfo['album_name'] + "' with uri '" + trackInfo['track_uri'] + "'")
 
 
 loop("no track yet")

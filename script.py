@@ -19,7 +19,7 @@ sp = spotipy.Spotify(auth=token)
 DELAY = 0.5 # delay in seconds for loop 
 MINIMUM_TIME = 2 # minimum time between track skips
 MAXIMUM_TIME = 5 # maximum time
-PLAYLIST = "janiquevaniersel + Lennart"
+PLAYLIST = "janiquevaniersel + Lennart" # get favourite songs from Janique from blend list between Janique and Lennart 
 
 # add to favourite songs list 
 favourite_song_name_list = {
@@ -89,7 +89,6 @@ def loop(previous_track_uri):
                             print('\n')
                     else:
                         print("Found a track that Janique likes.\n")
-                            
                             
                 # update current track
                 previous_track_uri = current_track_uri    
@@ -209,24 +208,17 @@ def getSongInfoBySongname(songName, trackKnown=False):
 def getSongsFromPlaylist(playlistId, userid=None):
     songs = sp.playlist(playlistId)['tracks']['items']
     songsDict = {}
-    listElements = 0
     for song in songs:
         if userid is not None:
             added_by = song['added_by']['id']
             if not added_by == userid:
                 songinfo = getSongInfoBySongname(song['track'], True)
                 songsDict[len(songsDict)] = songinfo
-                listElements = listElements + 1
                 printFoundSong(songinfo)
         else:
             songinfo = getSongInfoBySongname(song['track'], True)
             songsDict[len(songsDict)] = songinfo
-            listElements = listElements + 1
             printFoundSong(songinfo)
-    songsList = []
-    index = 0
-    for key, value in songsDict.items():
-        songsList.append(value)
     return songsDict
         
 def printFoundSong(songInfo):

@@ -28,7 +28,8 @@ favourite_song_name_list = {
     2: "Lay All Your Love On Me",
     3: "New Light",
     4: "Gravity",
-    5: "In the Blood"
+    5: "In the Blood",
+    6: "9 to 5 "
 }
 
 # will fill up with favourite songs
@@ -182,27 +183,26 @@ def getPlaylistIdByPlaylistname(playlistName, offsetIndex):
 # return songinfo 
 # can be overloaded with trackKnown. if not provided will search by songname
 def getSongInfoBySongname(songName, trackKnown=False):
-    if(getDeviceState()):
-        if not trackKnown:
-            # will search track with api search function
-            print("\n\tSearching for: '" + songName + "'...")
-            result = sp.search(q='track:' + songName, type='track', limit = 1)['tracks']['items'][0]
-        else:
-            # track is already known
-            result = songName
-        album_name = result['album']['name']
-        artist_names = ''
-        for artists in result['artists']:
-            artist_names = artist_names + artists['name'] + ', '
-        artist_names = artist_names[:-2]
-        song_name = result['name']
-        song_uri = result['uri'].split(":")[2]
-        return {
-            "album_name": album_name,
-            "artist_names": artist_names,
-            "song_name": song_name,
-            "song_uri": song_uri
-        }
+    if not trackKnown:
+        # will search track with api search function
+        print("\n\tSearching for: '" + songName + "'...")
+        result = sp.search(q='track:' + songName, type='track', limit = 1)['tracks']['items'][0]
+    else:
+        # track is already known
+        result = songName
+    album_name = result['album']['name']
+    artist_names = ''
+    for artists in result['artists']:
+        artist_names = artist_names + artists['name'] + ', '
+    artist_names = artist_names[:-2]
+    song_name = result['name']
+    song_uri = result['uri'].split(":")[2]
+    return {
+        "album_name": album_name,
+        "artist_names": artist_names,
+        "song_name": song_name,
+        "song_uri": song_uri
+    }
 
 # get songs from playlist and put them in favourite songs.
 # can be overloaded with userid

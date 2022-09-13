@@ -187,8 +187,8 @@ def fillUpCustomTrackList(list, trackNames=True):
     """ Update custom track list with list of tracknames provided. Can be overloaded to take tracklist with songs.
 
         Parameters:
-            - List of tracknames OR list with tracks
-            - True if tracknames, false if tracks
+            - List of tracknames (dictionary) OR list with track (object)
+            - Expects bool True if tracknames, false if track objects
     """
 
     for key, track in list.items():
